@@ -548,30 +548,83 @@ class _AccountPageState extends State<AccountPage> {
     print("Activity Level: $_selectedActivityLevel");
   }
 }
-//class StepTracker extends StatefulWidget {
- // @override
-  //_StepTrackerState createState() => _StepTrackerState();
-//}
-//class _StepTrackerState extends State<StepTracker> {
- // String _stepCountValue = '0';
-  //late Stream<StepCount> _stepCountStream;
-  //@override
-  //void initState() {
-   // super.initState();
-    //startStepTracking();
- // }
-  //void startStepTracking() {
-   // try {
-      //_stepCountStream = Pedometer.stepCountStream;
-      //stepCountStream.listen(onStepCount).onError(onError);
-    //} catch (e) {
-     // print('Error starting pedometer: $e');
-    //}
- // }
-  //void onStepCount(StepCount event) {
-   // setState(() {
-    //  _stepCountValue = event.steps.toString();
-   // });
+class StepTracker extends StatefulWidget {
+  @override
+  _StepTrackerState createState() => _StepTrackerState();
+}
+class _StepTrackerState extends State<StepTracker> {
+  String _stepCountValue = '0';
+  late Stream<StepCount> _stepCountStream;
+
+  @override
+  void initState() {
+    super.initState();
+    startStepTracking();
+  }
+  void startStepTracking() {
+    try {
+      _stepCountStream = Pedometer.stepCountStream;
+      _stepCountStream.listen(onStepCount, onError: onError);
+    } catch (e) {
+      print('Error starting pedometer: $e');// if some problems happens whens starting app
+    }
+  }
+  void onStepCount(StepCount event) {
+    setState(() {
+      _stepCountValue = event.steps.toString();
+    });
+  }
+
+  void onError(error) {
+    print('Step Count error: $error');
+    setState(() {//another erroe handler
+      _stepCountValue = 'Failed to Initalize Step Counter ';
+    });
+  }
+  @override
+  Widget build(BuildContext context){
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.directions_walk,
+              color: Colors.white,
+              size: 30,
+            ),
+            const SizedBox(width:10),
+            Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                'Steps',
+                  style: TextStyle(// steps box
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                const SizedBox(height: 5),
+                Text(
+                _stepCountValue,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+    }
+  }
 
 class homepg extends StatefulWidget {
   const homepg({super.key});
@@ -625,9 +678,14 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
       }
     });
   }
-
+  String waterMessage = "";
   void _animateProgress() {
     double progress = waterIntake / 16.0;
+    if (waterIntake ==16){
+      setState(() {
+        waterMessage = "You Drank Your Goal Amount for the Day";//change the message to be more upbeat
+      });
+    }
     _animationController.animateTo(progress);
   }
 //firebase
@@ -642,7 +700,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
 
       if (userDoc.exists) {
         double weight = userDoc['weight'] ?? 0.0;
-        double height = userDoc['height'] ?? 0.0;
+        double height = userDoc['height'] ?? 0.0;//BMI calcuatir
         height = height / 100;
         double calculatedBMI = weight / (height * height);
         setState(() {
@@ -671,7 +729,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: const [
                   BoxShadow(
-                    color: Colors.black26,
+                    color: Colors.transparent,//bk color for the info vox
                     blurRadius: 6,
                     offset: Offset(0, 3),
                   ),
@@ -689,7 +747,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             width: 100,
                             height: 100,
                             child: CircularProgressIndicator(
-                              value: _animationController.value,
+                              value: _animationController.value,//water intake animetion for the water circle
                               backgroundColor: Colors.grey[300],
                               valueColor: const AlwaysStoppedAnimation<Color>(
                                 Colors.blue,
@@ -713,7 +771,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                           const Text(
                             'Water Intake (Cups)',
                             style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 18,//water in take, futre developometn - make it so the user can change the amount of water they want to drink in a day
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white),
                           ),
@@ -721,11 +779,11 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.remove, color: Colors.red),
-                                onPressed: decrementWater,
+                                onPressed: decrementWater,// dec waterbtn
                               ),
                               IconButton(
                                 icon: const Icon(Icons.add, color: Colors.green),
-                                onPressed: incrementWater,
+                                onPressed: incrementWater,//inc waterbtn
                               ),
                             ],
                           ),
@@ -733,19 +791,11 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),//voiding out for the final presentaion, after chagne teh bxo color to view inforamtion
-                  //  and Calories
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildInfoBox('Calories Left', '${calorieLimit - consumedCalories}'),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 700),
                   Text(
                     bmi == null
                         ? 'Calculating BMI...'
-                        : 'Your BMI: ${bmi!.toStringAsFixed(2)}',
+                        : 'Your BMI: ${bmi!.toStringAsFixed(2)}',//cauckugnat BMU
                     style: const TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ],
@@ -762,7 +812,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: const [
                   BoxShadow(
-                    color: Colors.black26,
+                    color: Colors.transparent,//muscle figure bk C
                     blurRadius: 6,
                     offset: Offset(0, 3),
                   ),
@@ -813,7 +863,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//back
+                        child: Container()//back// have to leave blacnk becaue of elevarted button
                       ),
                     ),
                   ),
@@ -835,7 +885,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//chest
+                        child: Container(),//chest
                       ),
                     ),
                   ),
@@ -858,7 +908,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//abs
+                        child: Container(),//abs
                       ),
                     ),
                   ),
@@ -881,7 +931,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//legs
+                        child: Container(),//legs
                       ),
                     ),
                   ),
@@ -900,11 +950,12 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const MuscleVideosPage(muscleGroup: "Triceps"),
+                              builder: (context) =>
+                              const MuscleVideosPage(muscleGroup: "Triceps"),
                             ),
                           );
                         },
-                        child: const Text(" "),//Right tris
+                        child: Container(),//Right tris
                       ),
                     ),
                   ),
@@ -927,7 +978,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(""),//left bi
+                        child: Container(),//left bi
                       ),
                     ),
                   ),
@@ -950,7 +1001,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(""),//Right bi
+                        child: Container(),
                       ),
                     ),
                   ),
@@ -973,7 +1024,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//Right Tri
+                        child: Container(),
                       ),
                     ),
                   ),
@@ -996,7 +1047,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//Back leg
+                        child: Container(),
                       ),
                     ),
                   ),
@@ -1019,7 +1070,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//right forearm-pic2
+                        child: Container(),
                       ),
                     ),
                   ),
@@ -1042,8 +1093,8 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                       ),
                     );
                   },
-                  child: const Text(""),//left forearm-pic2
-                      ),
+                  child: Container(),
+                ),
                     ),
                   ),
                   Padding(
@@ -1065,7 +1116,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//left forearm-pic 1
+                        child: Container(),
                       ),
                     ),
                   ),
@@ -1088,7 +1139,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//right forearm-pic1
+                        child: Container(),
                       ),
                     ),
                   ),
@@ -1134,7 +1185,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//Shoulders left - pic 2
+                        child: Container(),
                       ),
                     ),
                   ),
@@ -1157,7 +1208,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//Shoulders left - pic 1
+                        child: Container(),
                       ),
                     ),
                   ),
@@ -1180,7 +1231,7 @@ class homepgstate extends State<homepg> with SingleTickerProviderStateMixin {
                             ),
                           );
                         },
-                        child: const Text(" "),//Shoulders right - pic 1
+                        child: Container(),
                       ),
                     ),
                   ),
